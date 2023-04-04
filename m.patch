@@ -1,0 +1,1228 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+new file mode 100644
+index 0000000..b41a6b3
+--- /dev/null
++++ b/CMakeLists.txt
+@@ -0,0 +1,100 @@
++cmake_minimum_required (VERSION 3.6)
++project (Auto C CXX Fortran)
++
++#enable_language (Fortran)
++
++#################################################################################
++#
++# global settings
++#
++#################################################################################
++
++# make sure that the default is a RELEASE
++if (NOT CMAKE_BUILD_TYPE)
++  set (CMAKE_BUILD_TYPE RELEASE CACHE STRING
++      "Choose the type of build, options are: None Debug Release."
++      FORCE)
++endif (NOT CMAKE_BUILD_TYPE)
++
++# default installation
++get_filename_component (default_prefix ".." ABSOLUTE)
++set (CMAKE_INSTALL_PREFIX ${default_prefix} CACHE STRING
++      "Choose the installation directory; by default it installs in the Auto directory."
++      FORCE)
++
++# FFLAGS depend on the compiler
++get_filename_component (Fortran_COMPILER_NAME ${CMAKE_Fortran_COMPILER} NAME)
++
++if (Fortran_COMPILER_NAME MATCHES "gfortran.*")
++  # gfortran
++  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3")
++  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g")
++elseif (Fortran_COMPILER_NAME MATCHES "ifort.*")
++  # ifort (untested)
++  set (CMAKE_Fortran_FLAGS_RELEASE "-f77rtl -O3")
++  set (CMAKE_Fortran_FLAGS_DEBUG   "-f77rtl -O0 -g")
++elseif (Fortran_COMPILER_NAME MATCHES "g77")
++  # g77
++  set (CMAKE_Fortran_FLAGS_RELEASE "-funroll-all-loops -fno-f2c -O3 -m32")
++  set (CMAKE_Fortran_FLAGS_DEBUG   "-fno-f2c -O0 -g -m32")
++else (Fortran_COMPILER_NAME MATCHES "gfortran.*")
++  message ("CMAKE_Fortran_COMPILER full path: " ${CMAKE_Fortran_COMPILER})
++  message ("Fortran compiler: " ${Fortran_COMPILER_NAME})
++  message ("No optimized Fortran compiler flags are known, we just try -O2...")
++  set (CMAKE_Fortran_FLAGS_RELEASE "-O2")
++  set (CMAKE_Fortran_FLAGS_DEBUG   "-O0 -g")
++endif (Fortran_COMPILER_NAME MATCHES "gfortran.*")
++
++SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
++SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
++
++#################################################################################
++#
++# add libs/exes/tests ..., etc.
++#
++#################################################################################
++
++
++# build executables
++#set (NMPROGRAMS "diagstd" "diagrtb" "proj_modes_bin" "pdbmat")
++#set (EXECUTABLES "Auto.exe" ${NMPROGRAMS})
++#set (SCRIPTS "gen_pert.sh" "pert_multi_mode.sh")
++
++# This is what run() does:
++#AUTO> run()
++#gcc -O -DPTHREADS -O -I/home/amavisitors/redrod/src/auto/2000/include -c ab.c
++#gcc -O ab.o -o ab.exe /home/amavisitors/redrod/src/auto/2000/lib/*.o
++#-lpthread -L/home/amavisitors/redrod/src/auto/2000/lib -lauto_f2c -lm
++#
++
++#################################################################################
++#
++# Add auto lib
++#
++#################################################################################
++add_subdirectory(src)
++
++
++#################################################################################
++#
++# add demo projects:
++#
++#################################################################################
++add_subdirectory(demos)
++#add_subdirectory(demos_c) # linking issues
++
++add_subdirectory(util)
++add_subdirectory(plaut)
++
++add_subdirectory(plaut04)
++
++#foreach (p ${NMPROGRAMS})
++#  add_executable (${p} "${p}.f")
++#endforeach (p)
++
++# install executables and scripts
++#install (TARGETS ${EXECUTABLES}
++#         RUNTIME DESTINATION "bin")
++#install (PROGRAMS ${SCRIPTS}
++#         DESTINATION "bin")
++
+diff --git a/demos/CMakeLists.txt b/demos/CMakeLists.txt
+new file mode 100644
+index 0000000..a6ce1fd
+--- /dev/null
++++ b/demos/CMakeLists.txt
+@@ -0,0 +1,43 @@
++macro(SUBDIRLIST result curdir)
++
++  # message ( " => ${curdir}")
++
++  # The RELATIVE command is broken:
++  # file(GLOB sub_dir LIST_DIRECTORIES true RELATIVE $curdir $curdir/*)
++  # so have to use the following work around. First get full path,
++  # then use file(RELATIVE path) to get the relative path.
++
++  file(GLOB sub_dir LIST_DIRECTORIES true *) #here cannot use ${curdir}/* either!!
++  # message ( " => ${sub_dir}")
++
++  set(dirlist "")
++  foreach(dir ${sub_dir})
++    file(RELATIVE_PATH rdir ${curdir} ${dir})
++    if(IS_DIRECTORY ${curdir}/${rdir})
++      list(APPEND dirlist ${rdir})
++    endif()
++  endforeach()
++  set(${result} ${dirlist})
++endmacro()
++
++SUBDIRLIST(sub_directories ${CMAKE_CURRENT_SOURCE_DIR})
++message("${sub_directories}")
++
++# loop through all folders and add the demo
++foreach (p ${sub_directories})
++  set(APP_EXE ${p}.exe)
++  # message(" == add $APP_EXE")
++  add_executable (${APP_EXE} "${p}/${p}.f90")
++  target_link_libraries(${APP_EXE}
++    PRIVATE
++        auto::auto_f
++        auto::auto_f_main
++  )
++  message(" === ${p} is added to build ==")
++endforeach ()
++
++# install executables and scripts
++#install (TARGETS ${EXECUTABLES}
++#         RUNTIME DESTINATION "bin")
++#install (PROGRAMS ${SCRIPTS}
++#         DESTINATION "bin")
+diff --git a/demos/fhh/fhn.f90 b/demos/fhh/fhh.f90
+similarity index 100%
+rename from demos/fhh/fhn.f90
+rename to demos/fhh/fhh.f90
+diff --git a/demos/python/n-body/Makefile b/demos/python/n-body/Makefile
+deleted file mode 100644
+index e343ccf..0000000
+--- a/demos/python/n-body/Makefile
++++ /dev/null
+@@ -1,2 +0,0 @@
+-clean:
+-	rm -f *~ *.o d.* s.* b.* fort.* *.exe
+diff --git a/demos_c/CMakeLists.txt b/demos_c/CMakeLists.txt
+new file mode 100644
+index 0000000..2cf9c98
+--- /dev/null
++++ b/demos_c/CMakeLists.txt
+@@ -0,0 +1,45 @@
++macro(SUBDIRLIST result curdir)
++
++  # message ( " => ${curdir}")
++
++  # The RELATIVE command is broken:
++  # file(GLOB sub_dir LIST_DIRECTORIES true RELATIVE $curdir $curdir/*)
++  # so have to use the following work around. First get full path,
++  # then use file(RELATIVE path) to get the relative path.
++
++  file(GLOB sub_dir LIST_DIRECTORIES true *) #here cannot use ${curdir}/* either!!
++  # message ( " => ${sub_dir}")
++
++  set(dirlist "")
++  foreach(dir ${sub_dir})
++    file(RELATIVE_PATH rdir ${curdir} ${dir})
++    if(IS_DIRECTORY ${curdir}/${rdir})
++      list(APPEND dirlist ${rdir})
++    endif()
++  endforeach()
++  set(${result} ${dirlist})
++endmacro()
++
++SUBDIRLIST(sub_directories ${CMAKE_CURRENT_SOURCE_DIR})
++message("${sub_directories}")
++
++# loop through all folders and add the demo
++foreach (p ${sub_directories})
++  set(APP_EXE ${p}.exe)
++  # message(" == add $APP_EXE")
++  #add_library(${APP_EXE}.obj OBJECT "${p}/${p}.c")
++  add_executable (${APP_EXE} "${p}/${p}.c")
++  target_link_libraries(${APP_EXE}
++    PRIVATE
++      auto::auto_main
++      auto::auto_c
++      auto::auto_f
++  )
++  message(" === ${p} is added to build ==")
++endforeach ()
++
++# install executables and scripts
++#install (TARGETS ${EXECUTABLES}
++#         RUNTIME DESTINATION "bin")
++#install (PROGRAMS ${SCRIPTS}
++#         DESTINATION "bin")
+diff --git a/demos/fnb/c.fhn b/demos_c/fnb/c.fhn
+similarity index 100%
+rename from demos/fnb/c.fhn
+rename to demos_c/fnb/c.fhn
+diff --git a/demos/fnb/c.fhn.1 b/demos_c/fnb/c.fhn.1
+similarity index 100%
+rename from demos/fnb/c.fhn.1
+rename to demos_c/fnb/c.fhn.1
+diff --git a/demos/fnb/c.fhn.2 b/demos_c/fnb/c.fhn.2
+similarity index 100%
+rename from demos/fnb/c.fhn.2
+rename to demos_c/fnb/c.fhn.2
+diff --git a/demos/fnb/c.fhn.3 b/demos_c/fnb/c.fhn.3
+similarity index 100%
+rename from demos/fnb/c.fhn.3
+rename to demos_c/fnb/c.fhn.3
+diff --git a/demos/fnb/c.fhn.4 b/demos_c/fnb/c.fhn.4
+similarity index 100%
+rename from demos/fnb/c.fhn.4
+rename to demos_c/fnb/c.fhn.4
+diff --git a/demos/fnb/c.fhn.5 b/demos_c/fnb/c.fhn.5
+similarity index 100%
+rename from demos/fnb/c.fhn.5
+rename to demos_c/fnb/c.fhn.5
+diff --git a/demos/fnb/c.fhn.6 b/demos_c/fnb/c.fhn.6
+similarity index 100%
+rename from demos/fnb/c.fhn.6
+rename to demos_c/fnb/c.fhn.6
+diff --git a/demos/fnb/c.fhn.7 b/demos_c/fnb/c.fhn.7
+similarity index 100%
+rename from demos/fnb/c.fhn.7
+rename to demos_c/fnb/c.fhn.7
+diff --git a/demos/fnb/clean.auto b/demos_c/fnb/clean.auto
+similarity index 100%
+rename from demos/fnb/clean.auto
+rename to demos_c/fnb/clean.auto
+diff --git a/demos/fnb/fhn.auto b/demos_c/fnb/fhn.auto
+similarity index 100%
+rename from demos/fnb/fhn.auto
+rename to demos_c/fnb/fhn.auto
+diff --git a/demos/fnb/fhn.c b/demos_c/fnb/fnb.c
+similarity index 100%
+rename from demos/fnb/fhn.c
+rename to demos_c/fnb/fnb.c
+diff --git a/demos/kdv/c.kdv b/demos_c/kdv/c.kdv
+similarity index 100%
+rename from demos/kdv/c.kdv
+rename to demos_c/kdv/c.kdv
+diff --git a/demos/kdv/c.kdv.1 b/demos_c/kdv/c.kdv.1
+similarity index 100%
+rename from demos/kdv/c.kdv.1
+rename to demos_c/kdv/c.kdv.1
+diff --git a/demos/kdv/c.kdv.2 b/demos_c/kdv/c.kdv.2
+similarity index 100%
+rename from demos/kdv/c.kdv.2
+rename to demos_c/kdv/c.kdv.2
+diff --git a/demos/kdv/c.kdv.3 b/demos_c/kdv/c.kdv.3
+similarity index 100%
+rename from demos/kdv/c.kdv.3
+rename to demos_c/kdv/c.kdv.3
+diff --git a/demos/kdv/c.kdv.4 b/demos_c/kdv/c.kdv.4
+similarity index 100%
+rename from demos/kdv/c.kdv.4
+rename to demos_c/kdv/c.kdv.4
+diff --git a/demos/kdv/c.kdv.5 b/demos_c/kdv/c.kdv.5
+similarity index 100%
+rename from demos/kdv/c.kdv.5
+rename to demos_c/kdv/c.kdv.5
+diff --git a/demos/kdv/c.kdv.6 b/demos_c/kdv/c.kdv.6
+similarity index 100%
+rename from demos/kdv/c.kdv.6
+rename to demos_c/kdv/c.kdv.6
+diff --git a/demos/kdv/c.kdv.7 b/demos_c/kdv/c.kdv.7
+similarity index 100%
+rename from demos/kdv/c.kdv.7
+rename to demos_c/kdv/c.kdv.7
+diff --git a/demos/kdv/clean.auto b/demos_c/kdv/clean.auto
+similarity index 100%
+rename from demos/kdv/clean.auto
+rename to demos_c/kdv/clean.auto
+diff --git a/demos/kdv/kdv.auto b/demos_c/kdv/kdv.auto
+similarity index 100%
+rename from demos/kdv/kdv.auto
+rename to demos_c/kdv/kdv.auto
+diff --git a/demos/kdv/kdv.c b/demos_c/kdv/kdv.c
+similarity index 100%
+rename from demos/kdv/kdv.c
+rename to demos_c/kdv/kdv.c
+diff --git a/demos/sib/c.sib b/demos_c/sib/c.sib
+similarity index 100%
+rename from demos/sib/c.sib
+rename to demos_c/sib/c.sib
+diff --git a/demos/sib/c.sib.1 b/demos_c/sib/c.sib.1
+similarity index 100%
+rename from demos/sib/c.sib.1
+rename to demos_c/sib/c.sib.1
+diff --git a/demos/sib/c.sib.10 b/demos_c/sib/c.sib.10
+similarity index 100%
+rename from demos/sib/c.sib.10
+rename to demos_c/sib/c.sib.10
+diff --git a/demos/sib/c.sib.11 b/demos_c/sib/c.sib.11
+similarity index 100%
+rename from demos/sib/c.sib.11
+rename to demos_c/sib/c.sib.11
+diff --git a/demos/sib/c.sib.12 b/demos_c/sib/c.sib.12
+similarity index 100%
+rename from demos/sib/c.sib.12
+rename to demos_c/sib/c.sib.12
+diff --git a/demos/sib/c.sib.13 b/demos_c/sib/c.sib.13
+similarity index 100%
+rename from demos/sib/c.sib.13
+rename to demos_c/sib/c.sib.13
+diff --git a/demos/sib/c.sib.14 b/demos_c/sib/c.sib.14
+similarity index 100%
+rename from demos/sib/c.sib.14
+rename to demos_c/sib/c.sib.14
+diff --git a/demos/sib/c.sib.2 b/demos_c/sib/c.sib.2
+similarity index 100%
+rename from demos/sib/c.sib.2
+rename to demos_c/sib/c.sib.2
+diff --git a/demos/sib/c.sib.3 b/demos_c/sib/c.sib.3
+similarity index 100%
+rename from demos/sib/c.sib.3
+rename to demos_c/sib/c.sib.3
+diff --git a/demos/sib/c.sib.4 b/demos_c/sib/c.sib.4
+similarity index 100%
+rename from demos/sib/c.sib.4
+rename to demos_c/sib/c.sib.4
+diff --git a/demos/sib/c.sib.5 b/demos_c/sib/c.sib.5
+similarity index 100%
+rename from demos/sib/c.sib.5
+rename to demos_c/sib/c.sib.5
+diff --git a/demos/sib/c.sib.6 b/demos_c/sib/c.sib.6
+similarity index 100%
+rename from demos/sib/c.sib.6
+rename to demos_c/sib/c.sib.6
+diff --git a/demos/sib/c.sib.7 b/demos_c/sib/c.sib.7
+similarity index 100%
+rename from demos/sib/c.sib.7
+rename to demos_c/sib/c.sib.7
+diff --git a/demos/sib/c.sib.8 b/demos_c/sib/c.sib.8
+similarity index 100%
+rename from demos/sib/c.sib.8
+rename to demos_c/sib/c.sib.8
+diff --git a/demos/sib/c.sib.9 b/demos_c/sib/c.sib.9
+similarity index 100%
+rename from demos/sib/c.sib.9
+rename to demos_c/sib/c.sib.9
+diff --git a/demos/sib/clean.auto b/demos_c/sib/clean.auto
+similarity index 100%
+rename from demos/sib/clean.auto
+rename to demos_c/sib/clean.auto
+diff --git a/demos/sib/sib.auto b/demos_c/sib/sib.auto
+similarity index 100%
+rename from demos/sib/sib.auto
+rename to demos_c/sib/sib.auto
+diff --git a/demos/sib/sib.c b/demos_c/sib/sib.c
+similarity index 100%
+rename from demos/sib/sib.c
+rename to demos_c/sib/sib.c
+diff --git a/demos/sib/sib_old.auto b/demos_c/sib/sib_old.auto
+similarity index 100%
+rename from demos/sib/sib_old.auto
+rename to demos_c/sib/sib_old.auto
+diff --git a/demos/python/branches.auto b/demos_python/python/branches.auto
+similarity index 100%
+rename from demos/python/branches.auto
+rename to demos_python/python/branches.auto
+diff --git a/demos/python/demo1.auto b/demos_python/python/demo1.auto
+similarity index 100%
+rename from demos/python/demo1.auto
+rename to demos_python/python/demo1.auto
+diff --git a/demos/python/demo2.auto b/demos_python/python/demo2.auto
+similarity index 100%
+rename from demos/python/demo2.auto
+rename to demos_python/python/demo2.auto
+diff --git a/demos/python/demo3.auto b/demos_python/python/demo3.auto
+similarity index 100%
+rename from demos/python/demo3.auto
+rename to demos_python/python/demo3.auto
+diff --git a/demos/python/demo4.auto b/demos_python/python/demo4.auto
+similarity index 100%
+rename from demos/python/demo4.auto
+rename to demos_python/python/demo4.auto
+diff --git a/demos/python/fullTest.auto b/demos_python/python/fullTest.auto
+similarity index 100%
+rename from demos/python/fullTest.auto
+rename to demos_python/python/fullTest.auto
+diff --git a/demos/python/n-body/.autorc b/demos_python/python/n-body/.autorc
+similarity index 100%
+rename from demos/python/n-body/.autorc
+rename to demos_python/python/n-body/.autorc
+diff --git a/demos/python/n-body/3d.c b/demos_python/python/n-body/3d.c
+similarity index 100%
+rename from demos/python/n-body/3d.c
+rename to demos_python/python/n-body/3d.c
+diff --git a/demos/python/n-body/README b/demos_python/python/n-body/README
+similarity index 100%
+rename from demos/python/n-body/README
+rename to demos_python/python/n-body/README
+diff --git a/demos/python/n-body/c.3d b/demos_python/python/n-body/c.3d
+similarity index 100%
+rename from demos/python/n-body/c.3d
+rename to demos_python/python/n-body/c.3d
+diff --git a/demos/python/n-body/clean.auto b/demos_python/python/n-body/clean.auto
+similarity index 100%
+rename from demos/python/n-body/clean.auto
+rename to demos_python/python/n-body/clean.auto
+diff --git a/demos/python/n-body/compute_lagrange_points_0.5.auto b/demos_python/python/n-body/compute_lagrange_points_0.5.auto
+similarity index 100%
+rename from demos/python/n-body/compute_lagrange_points_0.5.auto
+rename to demos_python/python/n-body/compute_lagrange_points_0.5.auto
+diff --git a/demos/python/n-body/compute_lagrange_points_family.auto b/demos_python/python/n-body/compute_lagrange_points_family.auto
+similarity index 100%
+rename from demos/python/n-body/compute_lagrange_points_family.auto
+rename to demos_python/python/n-body/compute_lagrange_points_family.auto
+diff --git a/demos/python/n-body/compute_periodic_family.xauto b/demos_python/python/n-body/compute_periodic_family.xauto
+similarity index 100%
+rename from demos/python/n-body/compute_periodic_family.xauto
+rename to demos_python/python/n-body/compute_periodic_family.xauto
+diff --git a/demos/python/n-body/plaut04.rc b/demos_python/python/n-body/plaut04.rc
+similarity index 100%
+rename from demos/python/n-body/plaut04.rc
+rename to demos_python/python/n-body/plaut04.rc
+diff --git a/demos/python/n-body/to_matlab.xauto b/demos_python/python/n-body/to_matlab.xauto
+similarity index 100%
+rename from demos/python/n-body/to_matlab.xauto
+rename to demos_python/python/n-body/to_matlab.xauto
+diff --git a/demos/python/plotter.auto b/demos_python/python/plotter.auto
+similarity index 100%
+rename from demos/python/plotter.auto
+rename to demos_python/python/plotter.auto
+diff --git a/demos/python/tutorial.auto b/demos_python/python/tutorial.auto
+similarity index 100%
+rename from demos/python/tutorial.auto
+rename to demos_python/python/tutorial.auto
+diff --git a/demos/python/userScript.py b/demos_python/python/userScript.py
+similarity index 100%
+rename from demos/python/userScript.py
+rename to demos_python/python/userScript.py
+diff --git a/demos/python/userScript.xauto b/demos_python/python/userScript.xauto
+similarity index 100%
+rename from demos/python/userScript.xauto
+rename to demos_python/python/userScript.xauto
+diff --git a/gui/ZREADME.txt b/gui/ZREADME.txt
+new file mode 100644
+index 0000000..36de641
+--- /dev/null
++++ b/gui/ZREADME.txt
+@@ -0,0 +1,17 @@
++##
++## THIS DOES NOT BUILD ANYMORE
++## auto97 gui requires Motif/X11 SDK.
++##
++
++enable_language(C)
++add_executable (auto97 auto97.c)
++target_link_libraries(auto97
++  PRIVATE
++  auto::auto_c
++)
++
++# install executables and scripts
++#install (TARGETS ${EXECUTABLES}
++#         RUNTIME DESTINATION "bin")
++#install (PROGRAMS ${SCRIPTS}
++#         DESTINATION "bin")
+diff --git a/manual_build.sh b/manual_build.sh
+new file mode 100755
+index 0000000..e70c593
+--- /dev/null
++++ b/manual_build.sh
+@@ -0,0 +1,32 @@
++#!/bin/sh -x
++
++
++gfortran -g  -O -I include/ -c src/auto_constants.f90 -o    manual_lib/auto_constants.o
++gfortran -g  -O -c src/f2003.f90 -o                          manual_lib/compat.o
++gfortran -g  -O -c src/lapack.f -o                           manual_lib/lapack.o
++gfortran -g  -O -c src/blas.f -o                             manual_lib/blas.o
++gfortran -g  -O -c src/nompi.f90 -o                          manual_lib/mpi.o
++gfortran -g  -O -c src/mesh.f90 -o                           manual_lib/mesh.o
++gfortran -g  -O -c src/support.f90 -o                        manual_lib/support.o
++gfortran -g  -O -c src/io.f90 -o                             manual_lib/io.o
++gfortran -g  -O -c src/floquet.f90 -o                        manual_lib/floquet.o
++gfortran -g  -O -c src/solvebv.f90 -o                        manual_lib/solvebv.o
++gfortran -g  -O -c src/interfaces.f90 -o                     manual_lib/interfaces.o
++gfortran -g  -O -c src/ae.f90 -o                             manual_lib/ae.o
++gfortran -g  -O -c src/toolboxae.f90 -o                      manual_lib/toolboxae.o
++gfortran -g  -O -c src/bvp.f90 -o                            manual_lib/bvp.o
++gfortran -g  -O -c src/equilibrium.f90 -o                    manual_lib/equilibrium.o
++gfortran -g  -O -c src/timeint.f90 -o                        manual_lib/timeint.o
++gfortran -g  -O -c src/toolboxbv.f90 -o                      manual_lib/toolboxbv.o
++gfortran -g  -O -c src/maps.f90 -o                           manual_lib/maps.o
++gfortran -g  -O -c src/periodic.f90 -o                       manual_lib/periodic.o
++gfortran -g  -O -c src/homcont.f90 -o                        manual_lib/homcont.o
++gfortran -g  -O -c src/optimization.f90 -o                   manual_lib/optimization.o
++gfortran -g  -O -c src/parabolic.f90 -o                      manual_lib/parabolic.o
++
++gfortran -g  -O -c src/main.f90 -o                           manual_lib/main.o
++
++echo " Now building ab demo..."
++
++gfortran -g  -O -c demos/ab/ab.f90 -o ab.o
++gfortran -g  -O ab.o -o ab.exe manual_lib/*.o
+diff --git a/plaut/CMakeLists.txt b/plaut/CMakeLists.txt
+new file mode 100644
+index 0000000..90c7a80
+--- /dev/null
++++ b/plaut/CMakeLists.txt
+@@ -0,0 +1,12 @@
++
++add_executable (plautmain plautdev.f plautint.f plautlib.f plautmain.f)
++target_link_libraries(plautmain
++  PRIVATE
++  auto::auto_f
++)
++
++# install executables and scripts
++#install (TARGETS ${EXECUTABLES}
++#         RUNTIME DESTINATION "bin")
++#install (PROGRAMS ${SCRIPTS}
++#         DESTINATION "bin")
+diff --git a/plaut04/CMakeLists.txt b/plaut04/CMakeLists.txt
+new file mode 100644
+index 0000000..130b119
+--- /dev/null
++++ b/plaut04/CMakeLists.txt
+@@ -0,0 +1 @@
++add_subdirectory(src)
+\ No newline at end of file
+diff --git a/plaut04/includes/gplaut04.h b/plaut04/includes/gplaut04.h
+index bf41f83..ffa7526 100644
+--- a/plaut04/includes/gplaut04.h
++++ b/plaut04/includes/gplaut04.h
+@@ -16,7 +16,7 @@
+ #include <unistd.h> // for access()
+ 
+ #include <Inventor/So.h>
+-#include <Inventor/SoOffscreenRenderer.h>
++//#include <Inventor/SoOffscreenRenderer.h>
+ #include <Inventor/SbViewportRegion.h>
+ #include <Inventor/SbLinear.h>
+ #include <Inventor/SoPickedPoint.h>
+@@ -48,7 +48,7 @@
+ 
+ // ENABLE SOME SPECIAL FUNCTION FOR THE GRAPH.
+ #define LIST_UNDER_MENUBAR
+-#define USE_EXAM_VIEWER 
++#define USE_EXAM_VIEWER
+ 
+ //
+ //  Macros to set Motif toggle buttons on or off
+@@ -72,7 +72,7 @@
+ #define ITEM_FOUR     3
+ 
+ #define WIN_WIDTH  1000
+-#define WIN_HEIGHT 1000 
++#define WIN_HEIGHT 1000
+ 
+ #ifndef M_PI
+     #define M_PI 3.1415926
+@@ -95,7 +95,7 @@
+ #define CL_STABILITY     -6
+ #define CL_POINT_NUMBER  -5
+ #define CL_CURVE_NUMBER  -4
+-#define CL_ORBIT_TYPE    -3 
++#define CL_ORBIT_TYPE    -3
+ #define CL_LABELS        -2
+ #define CL_COMPONENT     -1
+ 
+@@ -113,7 +113,7 @@
+ 
+ #include "r3bplaut04.h"
+ 
+-#define NO_COORD  0 
++#define NO_COORD  0
+ #define COORDORIGIN    1
+ #define LEFTBACK  2
+ #define LEFTAHEAD 3
+@@ -133,7 +133,7 @@
+ #define TYPE_EP_ODE   9
+ #define TYPE_MX       -9
+ 
+-#define TIME_IS_OFF  0 
++#define TIME_IS_OFF  0
+ #define TIME_ON_X    1
+ #define TIME_ON_Y    2
+ #define TIME_ON_Z    3
+@@ -144,11 +144,11 @@ struct UserData{
+     float (*multipliers)[2];           // from the diagnostic file.
+     int maxndim;
+     int *numFM;                        // #multipliers (+) or #eigenvalues (-)?
+-    long int (*labelIndex)[4];        // [0] --- saves the start row number in the solData, 
++    long int (*labelIndex)[4];        // [0] --- saves the start row number in the solData,
+ 	                              // [1] --- saves the row number in the bifData.
+ 	                              // [2] --- saves the type of the label.
+ 								  // [3] --- saves the stability of the solution.
+-    float *solMax, *solMin;								
++    float *solMax, *solMin;
+ };
+ //
+ ////////////////////////////////////////////////////////////////////////
+@@ -159,7 +159,7 @@ struct coord3{
+     float y ;
+     float z ;
+ };
+-    
++
+ struct TubeNode{
+     coord3 translation;
+     coord3 axis;
+diff --git a/plaut04/src/CMakeLists.txt b/plaut04/src/CMakeLists.txt
+new file mode 100644
+index 0000000..f1aee00
+--- /dev/null
++++ b/plaut04/src/CMakeLists.txt
+@@ -0,0 +1,56 @@
++cmake_minimum_required(VERSION 3.13.0)
++
++set(CMAKE_AUTOMOC ON)
++set(CMAKE_AUTORCC ON)
++set(CMAKE_AUTOUIC ON)
++
++# OK with:
++#
++#
++find_package(Qt5 COMPONENTS Widgets REQUIRED)
++
++# TODO: unfinished
++set (PLAUT04_FSRC_FILES
++    axis.c++
++    bifurcation.c++
++    createCoords.c++
++    createDisk.c++
++    createBoundingBox.c++
++    createLegend.c++
++    createSphere.c++
++    printToPS.c++
++    polygon3d.c++
++    readFM.c++
++    rounding.c++
++    solution.c++
++    stringtrim.c++
++    tube.c++
++    gmainqt.c++ # qt mainwindow
++)
++INCLUDE_DIRECTORIES("/path/to/qt/include")
++INCLUDE_DIRECTORIES("/path/to/qt/include/QtCore")
++INCLUDE_DIRECTORIES("/path/to/qt/include/QtWidgets")
++INCLUDE_DIRECTORIES("/path/to/qt/include/QtGui")
++INCLUDE_DIRECTORIES("../includes")
++INCLUDE_DIRECTORIES("/path/to/coin3d/include")
++
++add_library(plaut04 ${PLAUT04_FSRC_FILES})
++set_property(TARGET plaut04 PROPERTY POSITION_INDEPENDENT_CODE ON)
++add_library(auto::plaut04 ALIAS plaut04)
++
++add_library(plaut04_r3b
++   r3b/createLibPoint.c++
++   r3b/createPrimary.c++
++   r3b/toInertialFrame.c++
++   r3b/gmainr3b.c++
++  # resources.qrc
++)
++add_library(auto::plaut04_r3b ALIAS plaut04_r3b)
++
++add_executable(plaut04.exe gmain.c++)  # gmain.c++ the main()
++target_link_libraries(plaut04.exe
++  PRIVATE
++    plaut04
++    Qt5::Widgets
++    # COIN3D LIBS
++)
+\ No newline at end of file
+diff --git a/plaut04/src/gmainqt.c++ b/plaut04/src/gmainqt.c++
+index 13989e9..ae8d75b 100644
+--- a/plaut04/src/gmainqt.c++
++++ b/plaut04/src/gmainqt.c++
+@@ -144,9 +144,9 @@ MainWindow::numPeriodAnimatedCB(const QString &myChoice)
+ {
+     if ( myChoice == "inf" )
+     {
+-       numPeriodAnimated = -1; 
+-    } 
+-    else 
++       numPeriodAnimated = -1;
++    }
++    else
+     {
+        numPeriodAnimated = myChoice.toFloat();
+     }
+@@ -350,7 +350,7 @@ MainWindow::typeMenuBifurcation()
+ //       This is called by Qt when a menu item is picked from the Option menu.
+ //
+ void
+-MainWindow::optMenuPick(int which)  
++MainWindow::optMenuPick(int which)
+ //
+ ////////////////////////////////////////////////////////////////////////
+ {
+@@ -538,10 +538,10 @@ MainWindow::setListValue()
+ 
+     }
+     colorMethodSeletionList->clear();
+-    for (std::vector<std::string>::size_type i = 0; i < coloringMethodList.size(); i++) 
++    for (std::vector<std::string>::size_type i = 0; i < coloringMethodList.size(); i++)
+         colorMethodSeletionList->addItem(coloringMethodList[i].c_str());
+     labelsList->clear();
+-    for (std::vector<std::string>::size_type i = 0; i < labels.size(); i++) 
++    for (std::vector<std::string>::size_type i = 0; i < labels.size(); i++)
+         labelsList->addItem(labels[i].c_str());
+     xAxisList->setCurrentItem(xCoordIndices[0]);
+     yAxisList->setCurrentItem(yCoordIndices[0]);
+@@ -702,7 +702,7 @@ void MainWindow::typeMenuDisplay()
+ //
+ //  This is called by Qt just before the STYLE menu is displayed.
+ //
+-void 
++void
+ MainWindow::styleMenuDisplay()
+ //
+ ////////////////////////////////////////////////////////////////////////
+@@ -737,7 +737,7 @@ MainWindow::styleMenuDisplay()
+ //
+ //  This is called by Qt just before the STYLE menu is displayed.
+ //
+-void 
++void
+ MainWindow::coordMenuDisplay()
+ //
+ ////////////////////////////////////////////////////////////////////////
+@@ -823,7 +823,7 @@ MainWindow::optItem(unsigned i)
+     return j;
+ }
+ 
+-void 
++void
+ MainWindow::optMenuDisplay()
+ //
+ ////////////////////////////////////////////////////////////////////////
+@@ -1045,7 +1045,7 @@ MainWindow::buildStyleMenu()
+ #endif
+ 
+     styleMenuItems = new EditMenuItems;
+-    styleMenuItems->items = pulldown;   
++    styleMenuItems->items = pulldown;
+     styleMenuItems->which = whichStyle;
+     connect(pulldown, SIGNAL(aboutToShow()), this, SLOT(styleMenuDisplay()));
+ 
+@@ -1212,7 +1212,7 @@ MainWindow::buildMenu()
+ 
+ ////////////////////////////////////////////////////////////////////////
+ //
+-void 
++void
+ MainWindow::dimensionToggledCB()
+ //
+ ////////////////////////////////////////////////////////////////////////
+@@ -1245,7 +1245,7 @@ MainWindow::dimensionToggledCB()
+ 
+ ////////////////////////////////////////////////////////////////////////
+ //
+-void 
++void
+ MainWindow::createBdBoxCB()
+ //
+ ////////////////////////////////////////////////////////////////////////
+@@ -1504,8 +1504,8 @@ MainWindow::MainWindow() : QMainWindow()
+     renderArea = new SoQtExaminerViewer(widget);
+     renderArea->setSize(SbVec2s(winWidth, winHeight));
+     renderArea->setBackgroundColor(envColors[0]);
+-    if(useR3B)
+-        renderArea->setTransparencyType(SoGLRenderAction::SORTED_OBJECT_BLEND);
++    //if(useR3B)
++    //    renderArea->setTransparencyType(SoGLRenderAction::SORTED_OBJECT_BLEND);
+ 
+ #ifdef USE_EXAM_VIEWER
+     QFont f("Helvetica", 8);
+@@ -1662,7 +1662,7 @@ PreferDialog::createLineColorAndPatternPrefSheetGuts(QWidget *form, QGridLayout
+ ////////////////////////////////////////////////////////////////////////
+ //
+ void
+-PreferDialog::createColorAndLinePrefSheetHeader(QWidget *parent, 
++PreferDialog::createColorAndLinePrefSheetHeader(QWidget *parent,
+         QGridLayout *layout, int column)
+ //
+ ////////////////////////////////////////////////////////////////////////
+@@ -1717,7 +1717,7 @@ PreferDialog::createPreferActionFormControls(QWidget *parent)
+ 
+     closeBtn = new QPushButton(" &Update ", parent);
+     form->addWidget(closeBtn);
+-    connect(closeBtn, SIGNAL(clicked()), 
++    connect(closeBtn, SIGNAL(clicked()),
+                      this, SLOT(closePreferDialogAndUpdateScene()));
+ 
+     applyBtn = new QPushButton(" &Apply ", parent);
+@@ -1727,7 +1727,7 @@ PreferDialog::createPreferActionFormControls(QWidget *parent)
+ 
+     cancelBtn = new QPushButton(" &Cancel ", parent);
+     form->addWidget(cancelBtn);
+-    connect(cancelBtn, SIGNAL(clicked()), 
++    connect(cancelBtn, SIGNAL(clicked()),
+                      this, SLOT(closePreferDialogAndGiveUpChange()));
+ }
+ 
+@@ -1762,7 +1762,7 @@ PreferDialog::createGraphCoordinateSystemFrameGuts(QGroupBox *frame)
+     QHBoxLayout *layout = new QHBoxLayout(frame);
+ #endif
+     QButtonGroup *group = new QButtonGroup;
+-    connect(group, 
++    connect(group,
+ #if QT_VERSION >= 0x40000
+         SIGNAL(buttonClicked(int)),
+ #else
+@@ -1811,7 +1811,7 @@ PreferDialog::createGraphStyleFrameGuts(QGroupBox *frame)
+     QHBoxLayout *layout = new QHBoxLayout(frame);
+ #endif
+     QButtonGroup *group = new QButtonGroup;
+-    connect(group, 
++    connect(group,
+ #if QT_VERSION >= 0x40000
+         SIGNAL(buttonClicked(int)),
+ #else
+@@ -1866,7 +1866,7 @@ PreferDialog::createGraphTypeFrameGuts(QGroupBox *frame)
+     QHBoxLayout *layout = new QHBoxLayout(frame);
+ #endif
+     QButtonGroup *group = new QButtonGroup;
+-    connect(group, 
++    connect(group,
+ #if QT_VERSION >= 0x40000
+         SIGNAL(buttonClicked(int)),
+ #else
+@@ -1944,7 +1944,7 @@ PreferDialog::createGraphCoordPartsFrameGuts(QGroupBox *frame)
+     const char *coordItems[]=
+     {
+         "No Coordinate", "At Origin" ,
+-        "At Left && Behind", "At Left && Ahead"  
++        "At Left && Behind", "At Left && Ahead"
+     };
+ 
+ // create default selections
+@@ -2375,7 +2375,7 @@ MainWindow::getFileName(int fileMode)
+ //
+ ////////////////////////////////////////////////////////////////////////
+ {
+-    QString filename; 
++    QString filename;
+ 
+     if(fileMode == SAVE_ITEM)
+         filename = QFileDialog::getSaveFileName(QString::null,
+@@ -2456,7 +2456,7 @@ MainWindow::xListCallBack(const QString &str)
+     {
+         xCoordIndices.push_back((strcasecmp(tmp,"t")==0) ? 0 : atoi(tmp));
+         tmp = strtok(NULL,",");
+-    }while(tmp != NULL); 
++    }while(tmp != NULL);
+     if(whichType != BIFURCATION)
+     {
+         dai.solX = xCoordIndices;
+@@ -2498,7 +2498,7 @@ MainWindow::yListCallBack(const QString &str)
+ 
+ ////////////////////////////////////////////////////////////////////////
+ //
+-void 
++void
+ MainWindow::zListCallBack(const QString &str)
+ //
+ ////////////////////////////////////////////////////////////////////////
+@@ -2543,13 +2543,13 @@ MainWindow::lblListCallBack(const QString &str)
+     {
+         do
+         {
+-            lblIndices.push_back((strcasecmp(tmp,"all")==0) ? numLabels + MY_ALL : 
++            lblIndices.push_back((strcasecmp(tmp,"all")==0) ? numLabels + MY_ALL :
+ 	      atoi(tmp)-myLabels[0]);
+             tmp = strtok(NULL,",");
+         }while(tmp != NULL);
+         half = 2;
+     }
+-    else if(choice == MY_HALF) // -3 
++    else if(choice == MY_HALF) // -3
+     {
+         for(int j = 0; j < numLabels - SP_LBL_ITEMS; j++)
+             if(abs(clientData.labelIndex[j][2])!= 4 || (j+1)%half == 0)
+@@ -2675,7 +2675,7 @@ void popupFloquetMultiplierDialog(float data[], int size, int numFM)
+ {
+     static QDialog *dialog_shell = (QDialog *) 0;
+     QVBoxLayout *pane = (QVBoxLayout *) 0;
+-    
++
+     QString str = "";
+ 
+     for(int i=0; i<size; ++i)
+@@ -2746,7 +2746,7 @@ void popupFloquetMultiplierDialog(float data[], int size, int numFM)
+ void soxtmain(int argc, char *argv[])
+ {
+ // Initialize Inventor and Qt.
+-    SoQt::init(argc, argv, argv[0]);
++    SoQt::init("plaut04"); //argc, argv, argv[0]);
+ 
+     root = new SoSeparator;
+     root->ref();
+diff --git a/plaut04/src/gmainqt.h b/plaut04/src/gmainqt.h
+index a9855f5..3184380 100644
+--- a/plaut04/src/gmainqt.h
++++ b/plaut04/src/gmainqt.h
+@@ -1,21 +1,25 @@
+-#include <qwidget.h>
+-#include <qspinbox.h>
+-#include <qcombobox.h>
+-#include <qtabwidget.h>
+-#include <qslider.h>
+-#include <qpushbutton.h>
+-#include <qlabel.h>
+-#include <qlayout.h>
+-#include <qdialog.h>
+-#include <qradiobutton.h>
+-#include <qcheckbox.h>
+-#include <qmainwindow.h>
+-#include <qgroupbox.h>
++
++//#include <QtWidgets>
++#if 1
++#include <QtWidgets/qwidget.h>
++#include <QtWidgets/qspinbox.h>
++#include <QtWidgets/qcombobox.h>
++#include <QtWidgets/qtabwidget.h>
++#include <QtWidgets/qslider.h>
++#include <QtWidgets/qpushbutton.h>
++#include <QtWidgets/qlabel.h>
++#include <QtWidgets/qlayout.h>
++#include <QtWidgets/qdialog.h>
++#include <QtWidgets/qradiobutton.h>
++#include <QtWidgets/qcheckbox.h>
++#include <QtWidgets/qmainwindow.h>
++#include <QtWidgets/qgroupbox.h>
+ #if QT_VERSION >= 0x40000
+-#include <qmenu.h>
++#include <QtWidgets/qmenu.h>
+ #define QPopupMenu QMenu
+ #else
+-#include <qpopupmenu.h>
++#include <QtWidgets/qpopupmenu.h>
++#endif
+ #endif
+ 
+ #include <Inventor/Qt/SoQt.h>
+diff --git a/plaut04/src/printToPS.c++ b/plaut04/src/printToPS.c++
+index bcdc25b..c14cc9a 100644
+--- a/plaut04/src/printToPS.c++
++++ b/plaut04/src/printToPS.c++
+@@ -1,12 +1,16 @@
+ #include "printToPS.h"
+ 
++#if 0
+ #include <Inventor/SbViewportRegion.h>
+-#include <Inventor/SoOffscreenRenderer.h>
++//#include <Inventor/SoOffscreenRenderer.h>
+ 
+ #if defined(__COIN__) && COIN_MAJOR_VERSION >= 2 && COIN_MINOR_VERSION >= 1
+ #include <Inventor/annex/HardCopy/SoVectorizePSAction.h>
+ #endif
+ 
++// Windows only
++//#include <Inventor/Win/SoWin.h>
++
+ SbBool
+ printToPostScript (SoNode *root, const char *filename,
+ #ifdef USE_SOQT
+@@ -15,7 +19,7 @@ SoQtExaminerViewer *viewer, int printerDPI)
+ SoXtExaminerViewer *viewer, int printerDPI)
+ #endif
+ {
+-#if defined(__COIN__) && COIN_MAJOR_VERSION >= 2 && COIN_MINOR_VERSION >= 1
++#if defined(__COIN__) && COIN_MAJOR_VERSION >= 2 && COIN_MINOR_VERSION >= 1 || true
+     SoVectorizePSAction * ps = new SoVectorizePSAction;
+     SoVectorOutput * out = ps->getOutput();
+ 
+@@ -80,9 +84,9 @@ SoXtExaminerViewer *viewer, int printerDPI)
+     myViewport.setPixelsPerInch((float)printerDPI);
+ 
+ // Render the scene
+-    SoOffscreenRenderer *myRenderer =
+-        new SoOffscreenRenderer(myViewport);
+-    if (!myRenderer->render(root))
++    SoOffscreenRenderer *myRenderer =  SoWin::getOffscreenRenderer(); //Windows Only
++        //new SoOffscreenRenderer(myViewport);
++    if (!myRenderer || !myRenderer->render(root))
+     {
+         delete myRenderer;
+         return FALSE;
+@@ -96,3 +100,5 @@ SoXtExaminerViewer *viewer, int printerDPI)
+ #endif
+     return TRUE;
+ }
++
++#endif // 0
+\ No newline at end of file
+diff --git a/plaut04/src/printToPS.h b/plaut04/src/printToPS.h
+index b9dd9a4..5decbd0 100644
+--- a/plaut04/src/printToPS.h
++++ b/plaut04/src/printToPS.h
+@@ -12,9 +12,9 @@
+ SbBool
+ printToPostScript (SoNode *root, const char *filename,
+ #ifdef USE_SOQT
+-SoQtExaminerViewer *viewer, int printerDPI);
++SoQtExaminerViewer *viewer, int printerDPI) {}
+ #else
+-SoXtExaminerViewer *viewer, int printerDPI);
++SoXtExaminerViewer *viewer, int printerDPI) {}
+ #endif
+ 
+ #endif
+diff --git a/src/@b b/src/@b
+deleted file mode 100755
+index f2f1e8e..0000000
+--- a/src/@b
++++ /dev/null
+@@ -1,2 +0,0 @@
+- cp *.f *.f90 ../SAV
+-
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+new file mode 100644
+index 0000000..55da17b
+--- /dev/null
++++ b/src/CMakeLists.txt
+@@ -0,0 +1,136 @@
++#############################################
++#
++# AUTO Lib
++#
++#############################################
++
++#[[ ALL FILES:
++  blas.f
++  lapack.f
++  ae.f90
++  auto_constants.f90
++  bvp.f90
++  f2003.f90
++  equilibrium.f90
++  f2003.f90
++  floquet.f90
++  homcont.f90
++  interfaces.f90
++  io.f90
++  main.f90  ###
++  maps.f90
++  mesh.f90
++  optimization.f90
++  parabolic.f90
++  periodic.f90
++  solvebv.f90
++  support.f90
++  timeint.f90
++  toolboxae.f90
++  toolboxbv.f90
++#]]
++
++set (AUTO_FSRC_FILES
++#  unix.f90
++  nompi.f90
++  auto_constants.f90
++  f2003.f90
++  lapack.f
++  blas.f
++  nompi.f90
++  mesh.f90
++  support.f90
++  io.f90
++  floquet.f90
++  solvebv.f90
++  interfaces.f90
++  ae.f90
++  toolboxae.f90
++  bvp.f90
++  equilibrium.f90
++  timeint.f90
++  toolboxbv.f90
++  maps.f90
++  periodic.f90
++  homcont.f90
++  optimization.f90
++  parabolic.f90
++)
++
++#  mpi.f90
++
++set (AUTO_CSRC_FILES
++  user_c.f90
++  ../include/auto_f2c.h
++#  ../include/config.h
++)
++
++set (AUTO_HEADER_FILES
++  ../include
++#  ../include/auto.h
++)
++
++
++############################################################################
++# add auto_f lib
++# create the auto_f library so that user can link to it.
++############################################################################
++add_library(auto_f
++   ${AUTO_FSRC_FILES}
++)
++add_library(auto::auto_f ALIAS auto_f)
++
++# Make sure the compiler can find include files for our Hello library
++# when other libraries or executables link to Hello
++target_include_directories(auto_f
++  PUBLIC
++    ${AUTO_HEADER_FILES}
++)
++
++add_library(auto_f_main OBJECT main.f90)
++add_dependencies(auto_f_main auto_f)
++# main.f90 needs AUTOMPI.mod which is compiled in auto_f, cmake cannot
++# automatically resolve this dependency, so need force it here.
++
++add_library(auto::auto_f_main ALIAS auto_f_main)
++add_library(auto::auto_main ALIAS auto_f_main)
++target_include_directories(auto_f_main
++  PRIVATE
++    ${AUTO_HEADER_FILES}
++)
++
++############################################################################
++# add auto_c lib
++############################################################################
++add_library(auto_c
++   ${AUTO_CSRC_FILES}
++)
++
++add_library(auto::auto_c ALIAS auto_c)
++
++# Make sure the compiler can find include files for our Hello library
++# when other libraries or executables link to Hello
++target_include_directories(auto_c
++  PUBLIC
++    ${AUTO_HEADER_FILES}
++)
++
++target_link_libraries(auto_c
++  PUBLIC
++    ${auto_f}
++)
++# install libauto_c into lib folder of the install directory.
++# also include our public header file into the install step and tell cmake to put it into include.
++install(TARGETS auto_c DESTINATION lib)
++install(FILES  ../include/auto.h DESTINATION include)
++
++#foreach (p ${NMPROGRAMS})
++#  add_executable (${p} "${p}.f")
++#endforeach (p)
++
++# install executables and scripts
++#install (TARGETS ${EXECUTABLES}
++#         RUNTIME DESTINATION "bin")
++#install (PROGRAMS ${SCRIPTS}
++#         DESTINATION "bin")
++
+diff --git a/util/CMakeLists.txt b/util/CMakeLists.txt
+new file mode 100644
+index 0000000..8757416
+--- /dev/null
++++ b/util/CMakeLists.txt
+@@ -0,0 +1,39 @@
++
++add_library(utility_obj OBJECT utility.f90)
++
++macro(add_utility_app app_name src_file)
++  add_executable (${app_name} ${src_file})
++  target_link_libraries(${app_name}
++    PRIVATE
++      utility_obj
++  )
++
++  message(" === ${src_file} is added to build ==")
++endmacro()
++
++
++add_utility_app(autlab autlab.f90)
++add_utility_app(double double.f90)
++add_utility_app(keepbp keepbp.f90)
++add_utility_app(keeplp keeplp.f90)
++add_utility_app(keepuz keepuz.f90)
++add_utility_app(keepsp keepsp.f90)
++add_utility_app(deletelp deletelp.f90)
++add_utility_app(listlabels listlabels.f90)
++add_utility_app(zero zero.f90)
++add_utility_app(reduce reduce.f90)
++
++add_executable (relabel relabel.f90)
++target_link_libraries(relabel
++  PRIVATE
++  auto::auto_f
++)
++
++add_executable (zero.exe zero.f90)
++
++
++# install executables and scripts
++#install (TARGETS ${EXECUTABLES}
++#         RUNTIME DESTINATION "bin")
++#install (PROGRAMS ${SCRIPTS}
++#         DESTINATION "bin")

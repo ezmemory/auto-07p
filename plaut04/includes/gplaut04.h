@@ -16,7 +16,7 @@
 #include <unistd.h> // for access()
 
 #include <Inventor/So.h>
-#include <Inventor/SoOffscreenRenderer.h>
+//#include <Inventor/SoOffscreenRenderer.h>
 #include <Inventor/SbViewportRegion.h>
 #include <Inventor/SbLinear.h>
 #include <Inventor/SoPickedPoint.h>
@@ -48,7 +48,7 @@
 
 // ENABLE SOME SPECIAL FUNCTION FOR THE GRAPH.
 #define LIST_UNDER_MENUBAR
-#define USE_EXAM_VIEWER 
+#define USE_EXAM_VIEWER
 
 //
 //  Macros to set Motif toggle buttons on or off
@@ -72,7 +72,7 @@
 #define ITEM_FOUR     3
 
 #define WIN_WIDTH  1000
-#define WIN_HEIGHT 1000 
+#define WIN_HEIGHT 1000
 
 #ifndef M_PI
     #define M_PI 3.1415926
@@ -95,7 +95,7 @@
 #define CL_STABILITY     -6
 #define CL_POINT_NUMBER  -5
 #define CL_CURVE_NUMBER  -4
-#define CL_ORBIT_TYPE    -3 
+#define CL_ORBIT_TYPE    -3
 #define CL_LABELS        -2
 #define CL_COMPONENT     -1
 
@@ -113,7 +113,7 @@
 
 #include "r3bplaut04.h"
 
-#define NO_COORD  0 
+#define NO_COORD  0
 #define COORDORIGIN    1
 #define LEFTBACK  2
 #define LEFTAHEAD 3
@@ -133,7 +133,7 @@
 #define TYPE_EP_ODE   9
 #define TYPE_MX       -9
 
-#define TIME_IS_OFF  0 
+#define TIME_IS_OFF  0
 #define TIME_ON_X    1
 #define TIME_ON_Y    2
 #define TIME_ON_Z    3
@@ -144,11 +144,11 @@ struct UserData{
     float (*multipliers)[2];           // from the diagnostic file.
     int maxndim;
     int *numFM;                        // #multipliers (+) or #eigenvalues (-)?
-    long int (*labelIndex)[4];        // [0] --- saves the start row number in the solData, 
+    long int (*labelIndex)[4];        // [0] --- saves the start row number in the solData,
 	                              // [1] --- saves the row number in the bifData.
 	                              // [2] --- saves the type of the label.
 								  // [3] --- saves the stability of the solution.
-    float *solMax, *solMin;								
+    float *solMax, *solMin;
 };
 //
 ////////////////////////////////////////////////////////////////////////
@@ -159,7 +159,7 @@ struct coord3{
     float y ;
     float z ;
 };
-    
+
 struct TubeNode{
     coord3 translation;
     coord3 axis;

@@ -1,11 +1,15 @@
 #include "printToPS.h"
 
+#if 0
 #include <Inventor/SbViewportRegion.h>
-#include <Inventor/SoOffscreenRenderer.h>
+//#include <Inventor/SoOffscreenRenderer.h>
 
 #if defined(__COIN__) && COIN_MAJOR_VERSION >= 2 && COIN_MINOR_VERSION >= 1
 #include <Inventor/annex/HardCopy/SoVectorizePSAction.h>
 #endif
+
+// Windows only
+//#include <Inventor/Win/SoWin.h>
 
 SbBool
 printToPostScript (SoNode *root, const char *filename,
@@ -15,7 +19,7 @@ SoQtExaminerViewer *viewer, int printerDPI)
 SoXtExaminerViewer *viewer, int printerDPI)
 #endif
 {
-#if defined(__COIN__) && COIN_MAJOR_VERSION >= 2 && COIN_MINOR_VERSION >= 1
+#if defined(__COIN__) && COIN_MAJOR_VERSION >= 2 && COIN_MINOR_VERSION >= 1 || true
     SoVectorizePSAction * ps = new SoVectorizePSAction;
     SoVectorOutput * out = ps->getOutput();
 
@@ -80,9 +84,9 @@ SoXtExaminerViewer *viewer, int printerDPI)
     myViewport.setPixelsPerInch((float)printerDPI);
 
 // Render the scene
-    SoOffscreenRenderer *myRenderer =
-        new SoOffscreenRenderer(myViewport);
-    if (!myRenderer->render(root))
+    SoOffscreenRenderer *myRenderer =  SoWin::getOffscreenRenderer(); //Windows Only
+        //new SoOffscreenRenderer(myViewport);
+    if (!myRenderer || !myRenderer->render(root))
     {
         delete myRenderer;
         return FALSE;
@@ -96,3 +100,5 @@ SoXtExaminerViewer *viewer, int printerDPI)
 #endif
     return TRUE;
 }
+
+#endif // 0

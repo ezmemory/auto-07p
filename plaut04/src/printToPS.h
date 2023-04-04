@@ -12,9 +12,9 @@
 SbBool
 printToPostScript (SoNode *root, const char *filename,
 #ifdef USE_SOQT
-SoQtExaminerViewer *viewer, int printerDPI);
+SoQtExaminerViewer *viewer, int printerDPI) {}
 #else
-SoXtExaminerViewer *viewer, int printerDPI);
+SoXtExaminerViewer *viewer, int printerDPI) {}
 #endif
 
 #endif

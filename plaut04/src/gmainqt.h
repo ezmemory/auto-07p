@@ -1,21 +1,25 @@
-#include <qwidget.h>
-#include <qspinbox.h>
-#include <qcombobox.h>
-#include <qtabwidget.h>
-#include <qslider.h>
-#include <qpushbutton.h>
-#include <qlabel.h>
-#include <qlayout.h>
-#include <qdialog.h>
-#include <qradiobutton.h>
-#include <qcheckbox.h>
-#include <qmainwindow.h>
-#include <qgroupbox.h>
+
+//#include <QtWidgets>
+#if 1
+#include <QtWidgets/qwidget.h>
+#include <QtWidgets/qspinbox.h>
+#include <QtWidgets/qcombobox.h>
+#include <QtWidgets/qtabwidget.h>
+#include <QtWidgets/qslider.h>
+#include <QtWidgets/qpushbutton.h>
+#include <QtWidgets/qlabel.h>
+#include <QtWidgets/qlayout.h>
+#include <QtWidgets/qdialog.h>
+#include <QtWidgets/qradiobutton.h>
+#include <QtWidgets/qcheckbox.h>
+#include <QtWidgets/qmainwindow.h>
+#include <QtWidgets/qgroupbox.h>
 #if QT_VERSION >= 0x40000
-#include <qmenu.h>
+#include <QtWidgets/qmenu.h>
 #define QPopupMenu QMenu
 #else
-#include <qpopupmenu.h>
+#include <QtWidgets/qpopupmenu.h>
+#endif
 #endif
 
 #include <Inventor/Qt/SoQt.h>

@@ -144,9 +144,9 @@ MainWindow::numPeriodAnimatedCB(const QString &myChoice)
 {
     if ( myChoice == "inf" )
     {
-       numPeriodAnimated = -1; 
-    } 
-    else 
+       numPeriodAnimated = -1;
+    }
+    else
     {
        numPeriodAnimated = myChoice.toFloat();
     }
@@ -350,7 +350,7 @@ MainWindow::typeMenuBifurcation()
 //       This is called by Qt when a menu item is picked from the Option menu.
 //
 void
-MainWindow::optMenuPick(int which)  
+MainWindow::optMenuPick(int which)
 //
 ////////////////////////////////////////////////////////////////////////
 {
@@ -538,10 +538,10 @@ MainWindow::setListValue()
 
     }
     colorMethodSeletionList->clear();
-    for (std::vector<std::string>::size_type i = 0; i < coloringMethodList.size(); i++) 
+    for (std::vector<std::string>::size_type i = 0; i < coloringMethodList.size(); i++)
         colorMethodSeletionList->addItem(coloringMethodList[i].c_str());
     labelsList->clear();
-    for (std::vector<std::string>::size_type i = 0; i < labels.size(); i++) 
+    for (std::vector<std::string>::size_type i = 0; i < labels.size(); i++)
         labelsList->addItem(labels[i].c_str());
     xAxisList->setCurrentItem(xCoordIndices[0]);
     yAxisList->setCurrentItem(yCoordIndices[0]);
@@ -702,7 +702,7 @@ void MainWindow::typeMenuDisplay()
 //
 //  This is called by Qt just before the STYLE menu is displayed.
 //
-void 
+void
 MainWindow::styleMenuDisplay()
 //
 ////////////////////////////////////////////////////////////////////////
@@ -737,7 +737,7 @@ MainWindow::styleMenuDisplay()
 //
 //  This is called by Qt just before the STYLE menu is displayed.
 //
-void 
+void
 MainWindow::coordMenuDisplay()
 //
 ////////////////////////////////////////////////////////////////////////
@@ -823,7 +823,7 @@ MainWindow::optItem(unsigned i)
     return j;
 }
 
-void 
+void
 MainWindow::optMenuDisplay()
 //
 ////////////////////////////////////////////////////////////////////////
@@ -1045,7 +1045,7 @@ MainWindow::buildStyleMenu()
 #endif
 
     styleMenuItems = new EditMenuItems;
-    styleMenuItems->items = pulldown;   
+    styleMenuItems->items = pulldown;
     styleMenuItems->which = whichStyle;
     connect(pulldown, SIGNAL(aboutToShow()), this, SLOT(styleMenuDisplay()));
 
@@ -1212,7 +1212,7 @@ MainWindow::buildMenu()
 
 ////////////////////////////////////////////////////////////////////////
 //
-void 
+void
 MainWindow::dimensionToggledCB()
 //
 ////////////////////////////////////////////////////////////////////////
@@ -1245,7 +1245,7 @@ MainWindow::dimensionToggledCB()
 
 ////////////////////////////////////////////////////////////////////////
 //
-void 
+void
 MainWindow::createBdBoxCB()
 //
 ////////////////////////////////////////////////////////////////////////
@@ -1504,8 +1504,8 @@ MainWindow::MainWindow() : QMainWindow()
     renderArea = new SoQtExaminerViewer(widget);
     renderArea->setSize(SbVec2s(winWidth, winHeight));
     renderArea->setBackgroundColor(envColors[0]);
-    if(useR3B)
-        renderArea->setTransparencyType(SoGLRenderAction::SORTED_OBJECT_BLEND);
+    //if(useR3B)
+    //    renderArea->setTransparencyType(SoGLRenderAction::SORTED_OBJECT_BLEND);
 
 #ifdef USE_EXAM_VIEWER
     QFont f("Helvetica", 8);
@@ -1662,7 +1662,7 @@ PreferDialog::createLineColorAndPatternPrefSheetGuts(QWidget *form, QGridLayout 
 ////////////////////////////////////////////////////////////////////////
 //
 void
-PreferDialog::createColorAndLinePrefSheetHeader(QWidget *parent, 
+PreferDialog::createColorAndLinePrefSheetHeader(QWidget *parent,
         QGridLayout *layout, int column)
 //
 ////////////////////////////////////////////////////////////////////////
@@ -1717,7 +1717,7 @@ PreferDialog::createPreferActionFormControls(QWidget *parent)
 
     closeBtn = new QPushButton(" &Update ", parent);
     form->addWidget(closeBtn);
-    connect(closeBtn, SIGNAL(clicked()), 
+    connect(closeBtn, SIGNAL(clicked()),
                      this, SLOT(closePreferDialogAndUpdateScene()));
 
     applyBtn = new QPushButton(" &Apply ", parent);
@@ -1727,7 +1727,7 @@ PreferDialog::createPreferActionFormControls(QWidget *parent)
 
     cancelBtn = new QPushButton(" &Cancel ", parent);
     form->addWidget(cancelBtn);
-    connect(cancelBtn, SIGNAL(clicked()), 
+    connect(cancelBtn, SIGNAL(clicked()),
                      this, SLOT(closePreferDialogAndGiveUpChange()));
 }
 
@@ -1762,7 +1762,7 @@ PreferDialog::createGraphCoordinateSystemFrameGuts(QGroupBox *frame)
     QHBoxLayout *layout = new QHBoxLayout(frame);
 #endif
     QButtonGroup *group = new QButtonGroup;
-    connect(group, 
+    connect(group,
 #if QT_VERSION >= 0x40000
         SIGNAL(buttonClicked(int)),
 #else
@@ -1811,7 +1811,7 @@ PreferDialog::createGraphStyleFrameGuts(QGroupBox *frame)
     QHBoxLayout *layout = new QHBoxLayout(frame);
 #endif
     QButtonGroup *group = new QButtonGroup;
-    connect(group, 
+    connect(group,
 #if QT_VERSION >= 0x40000
         SIGNAL(buttonClicked(int)),
 #else
@@ -1866,7 +1866,7 @@ PreferDialog::createGraphTypeFrameGuts(QGroupBox *frame)
     QHBoxLayout *layout = new QHBoxLayout(frame);
 #endif
     QButtonGroup *group = new QButtonGroup;
-    connect(group, 
+    connect(group,
 #if QT_VERSION >= 0x40000
         SIGNAL(buttonClicked(int)),
 #else
@@ -1944,7 +1944,7 @@ PreferDialog::createGraphCoordPartsFrameGuts(QGroupBox *frame)
     const char *coordItems[]=
     {
         "No Coordinate", "At Origin" ,
-        "At Left && Behind", "At Left && Ahead"  
+        "At Left && Behind", "At Left && Ahead"
     };
 
 // create default selections
@@ -2375,7 +2375,7 @@ MainWindow::getFileName(int fileMode)
 //
 ////////////////////////////////////////////////////////////////////////
 {
-    QString filename; 
+    QString filename;
 
     if(fileMode == SAVE_ITEM)
         filename = QFileDialog::getSaveFileName(QString::null,
@@ -2456,7 +2456,7 @@ MainWindow::xListCallBack(const QString &str)
     {
         xCoordIndices.push_back((strcasecmp(tmp,"t")==0) ? 0 : atoi(tmp));
         tmp = strtok(NULL,",");
-    }while(tmp != NULL); 
+    }while(tmp != NULL);
     if(whichType != BIFURCATION)
     {
         dai.solX = xCoordIndices;
@@ -2498,7 +2498,7 @@ MainWindow::yListCallBack(const QString &str)
 
 ////////////////////////////////////////////////////////////////////////
 //
-void 
+void
 MainWindow::zListCallBack(const QString &str)
 //
 ////////////////////////////////////////////////////////////////////////
@@ -2543,13 +2543,13 @@ MainWindow::lblListCallBack(const QString &str)
     {
         do
         {
-            lblIndices.push_back((strcasecmp(tmp,"all")==0) ? numLabels + MY_ALL : 
+            lblIndices.push_back((strcasecmp(tmp,"all")==0) ? numLabels + MY_ALL :
 	      atoi(tmp)-myLabels[0]);
             tmp = strtok(NULL,",");
         }while(tmp != NULL);
         half = 2;
     }
-    else if(choice == MY_HALF) // -3 
+    else if(choice == MY_HALF) // -3
     {
         for(int j = 0; j < numLabels - SP_LBL_ITEMS; j++)
             if(abs(clientData.labelIndex[j][2])!= 4 || (j+1)%half == 0)
@@ -2675,7 +2675,7 @@ void popupFloquetMultiplierDialog(float data[], int size, int numFM)
 {
     static QDialog *dialog_shell = (QDialog *) 0;
     QVBoxLayout *pane = (QVBoxLayout *) 0;
-    
+
     QString str = "";
 
     for(int i=0; i<size; ++i)
@@ -2746,7 +2746,7 @@ void popupFloquetMultiplierDialog(float data[], int size, int numFM)
 void soxtmain(int argc, char *argv[])
 {
 // Initialize Inventor and Qt.
-    SoQt::init(argc, argv, argv[0]);
+    SoQt::init("plaut04"); //argc, argv, argv[0]);
 
     root = new SoSeparator;
     root->ref();
